@@ -1,0 +1,28 @@
+name: AWS S3 & Cloudfront Deployment
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@master
+      
+      - name: Setup Environment
+        uses: actions/setup-node@master
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Setup Project
+        run: yarn
+      
+      - name: Build Project
+        run: yarn build
+
+      - name: Upload to S3
+        run: aws s3 sync dist s3://${{ env.S3_STORAGE_NAME }} --delete
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --path "${{ env.INVALIDATION_PATH || '/*' }}"
