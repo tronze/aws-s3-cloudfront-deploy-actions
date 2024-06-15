@@ -1,0 +1,55 @@
+name: AWS S3 & Cloudfront Deployment
+on:
+  workflow_call:
+    inputs:
+      NODE_VERSION:
+        required: true
+        type: string
+      S3_BUCKET_NAME:
+        required: true
+        type: string
+      CLOUDFRONT_DISTRIBUTION_ID:
+        required: true
+        type: string
+      AWS_REGION:
+        required: true
+        type: string
+      INVALIDATION_PATH:
+        required: false
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ inputs.AWS_REGION }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@master
+      
+      - name: Setup Environment
+        uses: actions/setup-node@master
+        with:
+          node-version: ${{ inputs.NODE_VERSION }}
+      
+      - name: Setup Project
+        run: yarn
+      
+      - name: Build Project
+        run: yarn build
+
+      - name: Upload to S3
+        run: aws s3 sync dist s3://${{ inputs.S3_BUCKET_NAME }} --delete
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ inputs.CLOUDFRONT_DISTRIBUTION_ID }} --path "${{ inputs.INVALIDATION_PATH || '/*' }}"
