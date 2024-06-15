@@ -1,5 +1,24 @@
 name: AWS S3 & Cloudfront Deployment
-on: [push]
+on:
+  workflow_call:
+    inputs:
+      NODE_VERSION:
+        required: true
+        type: string
+      S3_BUCKET_NAME:
+        required: true
+        type: string
+      CLOUDFRONT_DISTRIBUTION_ID:
+        required: true
+        type: string
+      INVALIDATION_PATH:
+        required: false
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
 
 jobs:
   build:
@@ -13,7 +32,7 @@ jobs:
       - name: Setup Environment
         uses: actions/setup-node@master
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ inputs.NODE_VERSION }}
       
       - name: Setup Project
         run: yarn
@@ -22,7 +41,7 @@ jobs:
         run: yarn build
 
       - name: Upload to S3
-        run: aws s3 sync dist s3://${{ env.S3_STORAGE_NAME }} --delete
+        run: aws s3 sync dist s3://${{ inputs.S3_BUCKET_NAME }} --delete
 
       - name: Invalidate Cloudfront
-        run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --path "${{ env.INVALIDATION_PATH || '/*' }}"
+        run: aws cloudfront create-invalidation --distribution-id ${{ inputs.CLOUDFRONT_DISTRIBUTION_ID }} --path "${{ inputs.INVALIDATION_PATH || '/*' }}"
