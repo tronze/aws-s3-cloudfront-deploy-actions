@@ -17,7 +17,7 @@ on:
       INVALIDATION_PATH:
         required: false
         type: string
-      ENV_PATH:
+      BUILD_COMMAND:
         required: false
         type: string
     secrets:
@@ -44,15 +44,12 @@ jobs:
         uses: actions/setup-node@master
         with:
           node-version: ${{ inputs.NODE_VERSION }}
-
-      - name: Setup Env file
-        run: cat ${{ inputs.ENV_PATH || '.env' }} > .env.production && cat .env.production
       
       - name: Setup Project
         run: yarn
       
       - name: Build Project
-        run: yarn build
+        run: ${{ inputs.BUILD_COMMAND || 'yarn build' }}
 
       - name: Upload to S3
         run: aws s3 sync dist s3://${{ inputs.S3_BUCKET_NAME }} --delete
