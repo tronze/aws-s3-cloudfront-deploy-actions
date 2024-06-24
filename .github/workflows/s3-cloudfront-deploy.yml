@@ -46,7 +46,7 @@ jobs:
           node-version: ${{ inputs.NODE_VERSION }}
 
       - name: Setup Env file
-        run: cat ${{ inputs.ENV_PATH || '.env' }} > .env.production
+        run: cat ${{ inputs.ENV_PATH || '.env' }} > .env.production && cat .env.production
       
       - name: Setup Project
         run: yarn
